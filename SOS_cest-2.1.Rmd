@@ -1,0 +1,54 @@
+---
+title: "SOS_cest-2.1"
+author: "MD"
+date: '2022-10-05'
+output: html_document
+---
+
+cest-2.1
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r }
+
+library(tidyverse)
+library(ggplot2)
+theme_set(theme_classic())
+####### loop through multiple datasets to read in files ####
+files <- fs::dir_ls(recurse = TRUE, glob = "*.csv")
+data <- files %>% purrr::map_df(., readr::read_csv, .id = "filename")
+#### if you want to use only one data file:
+
+#interactively:
+# data <- readr::read_csv(file.choose())
+
+# non-interactively (file paths always need to be exact, and they always start in the folder in which the .Rmd file is located)
+# data <- readr::read_csv(file = "SOS_R/cest-2.1_2022-09-06.csv") %>%
+  # in case you need column headers
+  # rename(Genotype = X1,
+  #        Bacteria = X2,
+  #        Time = X3,
+  #        Date = X4) %>%
+  # fix the order of the categorical predictors (factors)
+ data <- data %>% mutate(Genotype = fct_relevel(Genotype, "N2"),
+         Bacteria = fct_relevel(Bacteria, "OP50"))
+
+####### anova ####
+lm(data = data, formula = Time ~ Genotype*Bacteria) %>%
+  summary()
+
+###### plot (9/14 Experiment) #####
+#do you want to subset date?
+  data %>%
+  ggplot(aes(x = Genotype, y = Time)) +
+  stat_summary(geom = "bar", aes(fill = Bacteria, alpha = Genotype), width = 0.75) +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", width = .2) +
+  labs(title = "100% octanol avoidance with N2 and cest-2.1 on OP50 vs Providencia") +
+  facet_grid(Date~Bacteria) +
+  scale_fill_manual(values = c("black","blue")) +
+  scale_alpha_manual(values = c(1, 0.25))
+```
+  
+
